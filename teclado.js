@@ -1,8 +1,8 @@
 "use strict";
 
-var Teclado = (function() {
+const Teclado = (function() {
 
-  var RESULTADO = {
+  const RESULTADO = {
     //KEY_UNKNOWN1: 0, // Unknown or unrecognized key. Undesirable. May represent a bug or underspecification in the browser. May fire on firefox with FN+F2 or FN+F3 (changing brightness).
     //KEY_LBUTTON: 1,  // Left mouse button. Won't be fired since it is not on keyboard (it's on the mouse).
     //KEY_RBUTTON: 2,  // Right mouse button. Won't be fired since it is not on keyboard (it's on the mouse).
@@ -186,7 +186,7 @@ var Teclado = (function() {
     KEY_DASH2: 189,        // "-" or "_". Chrome and IE (firefox uses 173).
     KEY_PERIOD: 190,       // "." or ">"
     KEY_SLASH: 191,        // "/" or "?"
-    KEY_GRAVE: 192,       // "`" or "~"
+    KEY_GRAVE: 192,        // "`" or "~"
     //KEY_ORDINAL: 193,      // Lacking in many keyboards.
     KEY_NUMPAD_DOT2: 194,  // Lacking in some keyboards. Chrome-only (firefox uses 108).
     // 195-218
@@ -207,24 +207,24 @@ var Teclado = (function() {
     //KEY_UNKNOWN2: 255       // Unknown, unrecognized key. Undesirable. May represent a bug or underspecification in the browser. May fire on chrome with FN+F2 or FN+F3 (changing brightness).
   };
 
-  RESULTADO.KEY_SEMICOLON   = browser() === "Firefox" ? RESULTADO.KEY_SEMICOLON1   : RESULTADO.KEY_SEMICOLON2;
-  RESULTADO.KEY_EQUAL       = browser() === "Firefox" ? RESULTADO.KEY_EQUAL1       : RESULTADO.KEY_EQUAL2;
-  RESULTADO.KEY_DASH        = browser() === "Firefox" ? RESULTADO.KEY_DASH1        : RESULTADO.KEY_DASH2;
-  RESULTADO.KEY_MUTE        = browser() === "Firefox" ? RESULTADO.KEY_MUTE2        : RESULTADO.KEY_MUTE1;
-  RESULTADO.KEY_NUMPAD_DOT  = browser() === "Firefox" ? RESULTADO.KEY_NUMPAD_DOT1  : RESULTADO.KEY_NUMPAD_DOT2;
-  RESULTADO.KEY_VOLUME_DOWN = browser() === "Firefox" ? RESULTADO.KEY_VOLUME_DOWN2 : RESULTADO.KEY_VOLUME_DOWN1;
-  RESULTADO.KEY_VOLUME_UP   = browser() === "Firefox" ? RESULTADO.KEY_VOLUME_UP2   : RESULTADO.KEY_VOLUME_UP1;
+  RESULTADO.KEY_SEMICOLON   = Browser.name === "Firefox" ? RESULTADO.KEY_SEMICOLON1   : RESULTADO.KEY_SEMICOLON2;
+  RESULTADO.KEY_EQUAL       = Browser.name === "Firefox" ? RESULTADO.KEY_EQUAL1       : RESULTADO.KEY_EQUAL2;
+  RESULTADO.KEY_DASH        = Browser.name === "Firefox" ? RESULTADO.KEY_DASH1        : RESULTADO.KEY_DASH2;
+  RESULTADO.KEY_MUTE        = Browser.name === "Firefox" ? RESULTADO.KEY_MUTE2        : RESULTADO.KEY_MUTE1;
+  RESULTADO.KEY_NUMPAD_DOT  = Browser.name === "Firefox" ? RESULTADO.KEY_NUMPAD_DOT1  : RESULTADO.KEY_NUMPAD_DOT2;
+  RESULTADO.KEY_VOLUME_DOWN = Browser.name === "Firefox" ? RESULTADO.KEY_VOLUME_DOWN2 : RESULTADO.KEY_VOLUME_DOWN1;
+  RESULTADO.KEY_VOLUME_UP   = Browser.name === "Firefox" ? RESULTADO.KEY_VOLUME_UP2   : RESULTADO.KEY_VOLUME_UP1;
 
   RESULTADO.criar = function(doc) {
-    var teclado = {};
+    const teclado = {};
 
-    var pressionadas = [];
-    var funcoesDisparo = [];
-    var funcoesSolto = [];
+    const pressionadas = [];
+    const funcoesDisparo = [];
+    const funcoesSolto = [];
 
-    doc.addEventListener('keydown', function(evento) {
-      var tecla = evento.keyCode;
-      var disparar = !!funcoesDisparo[tecla] && !pressionadas[tecla]; // Disparar somente se for o primeiro keydown da tecla
+    doc.addEventListener("keydown", function(evento) {
+      const tecla = evento.keyCode;
+      const disparar = !!funcoesDisparo[tecla] && !pressionadas[tecla]; // Disparar somente se for o primeiro keydown da tecla
       pressionadas[tecla] = true;
       //console.log("keydown " + evento.keyCode);
       if (disparar) {
@@ -233,9 +233,9 @@ var Teclado = (function() {
       }
     });
 
-    doc.addEventListener('keyup', function(evento) {
-      var tecla = evento.keyCode;
-      var disparar = !!funcoesSolto[tecla] && pressionadas[tecla];
+    doc.addEventListener("keyup", function(evento) {
+      const tecla = evento.keyCode;
+      const disparar = !!funcoesSolto[tecla] && pressionadas[tecla];
       pressionadas[tecla] = false;
       //console.log("keyup " + evento.keyCode);
       if (disparar) {
@@ -245,20 +245,20 @@ var Teclado = (function() {
     });
 
     teclado.pressionada = function(teclas) {
-      for (var i in teclas) {
+      for (const i in teclas) {
         if (pressionadas[teclas[i]]) return true;
       }
       return false;
     },
 
     teclado.aoPressionar = function(teclas, callback) {
-      for (var i in teclas) {
+      for (const i in teclas) {
         funcoesDisparo[teclas[i]] = callback;
       }
     },
 
     teclado.aoSoltar = function(teclas, callback) {
-      for (var i in teclas) {
+      for (const i in teclas) {
         funcoesSolto[teclas[i]] = callback;
       }
     };

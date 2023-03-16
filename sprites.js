@@ -1,35 +1,56 @@
 "use strict";
 
-function SpriteSheet(linhas, colunas, src, finished) {
-  if (!this) return new SpriteSheet(linhas, colunas, src, finished);
-  var imagem = new Image();
-  imagem.src = src;
-  var largura = -1;
-  var altura = -1;
-  var t = this;
+class SpriteSheet {
+    #imagem;
+    #largura;
+    #altura;
 
-  imagem.onload = function() {
-    largura = imagem.width / colunas;
-    altura = imagem.height / linhas;
-    finished(t);
-  };
+    constructor(linhas, colunas, src, finished) {
+        this.#imagem = new Image();
+        this.#largura = -1;
+        this.#altura = -1;
 
-  this.sprite = function(linha, coluna) {
-    return function(ctx, x, y) {
-      ctx.drawImage(imagem, coluna * largura, linha * altura, largura, altura, x, y, largura, altura);
-    };
-  };
+        this.#imagem.onload = () => {
+            this.#largura = this.#imagem.width / colunas;
+            this.#altura = this.#imagem.height / linhas;
+            finished(this);
+        };
+        this.#imagem.src = src;
+    }
 
-  this.largura = function() {
-      return largura;
-  };
+    sprite(linha, coluna) {
+        return new Sprite(this.#imagem, linha, coluna, this.#largura, this.#altura);
+    }
 
-  this.altura = function() {
-      return altura;
-  };
+    get largura() {
+        return this.#largura;
+    }
 
-  Object.freeze(this);
+    get altura() {
+        return this.#altura;
+    }
 }
 
-SpriteSheet.prototype = {};
-Object.freeze(SpriteSheet.prototype);
+class Sprite {
+    #imagem;
+    #linha;
+    #coluna;
+    #largura;
+    #altura;
+
+    constructor(imagem, linha, coluna, largura, altura) {
+        this.#imagem = imagem;
+        this.#linha = linha;
+        this.#coluna = coluna;
+        this.#largura = largura;
+        this.#altura = altura;
+    }
+
+    draw(ctx, x, y) {
+        ctx.drawImage(
+            this.#imagem,
+            this.#coluna * this.#largura, this.#linha * this.#altura, this.#largura, this.#altura,
+            x, y, this.#largura, this.#altura
+        );
+    }
+}

@@ -107,9 +107,9 @@ var Controller = (function() {
     var acumulado = 0;
     var quadro = 0;
     var teclado = cfgs.teclado;
-    var b = browser();
-    var ext = b === 'IE' || b === 'Edge' || b === 'Safari' ? 'mp3' : 'ogg';
-    var musicas = Som.Musicas(['./menwork.' + ext, './sugar.' + ext, './madly.' + ext, './mambo5.' + ext, './danceq.' + ext]);
+    var b = Browser.name;
+    var ext = ["IE", "Edge", "Safari"].includes(b) ? "mp3" : "ogg";
+    var musicas = Som.Musicas(["./menwork." + ext, "./sugar." + ext, "./madly." + ext, "./mambo5." + ext, "./danceq." + ext]);
     var sons = Som.Sons({
       "acertou": "./urro." + ext,
       "errou": "./fhaha1." + ext,
@@ -127,8 +127,8 @@ var Controller = (function() {
       var b3 = b2 < 4 ? 4 : b2 > bm ? bm : b2;
       cfgs.varBuracos.definirValor(b3);
       modelo = Modelo.Mapa(w, h, b3);
-      canvas.width = spritesheet.largura() * w;
-      canvas.height = spritesheet.altura() * h;
+      canvas.width = spritesheet.largura * w;
+      canvas.height = spritesheet.altura * h;
       if (cfgs.varMusica.valor()) musicas.play();
     };
     cfgs.aoRecomecar(novoJogo);

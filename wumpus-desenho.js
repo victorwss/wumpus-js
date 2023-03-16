@@ -27,13 +27,13 @@ function desenhaModelo(modelo, spritesheet, ctx, quadro, especial) {
     return sx;
   }
 
-  var sw = spritesheet.largura();
-  var sh = spritesheet.altura();
+  var sw = spritesheet.largura;
+  var sh = spritesheet.altura;
   for (var y = 0; y < h; y++) {
     for (var x = 0; x < w; x++) {
       var sx = sprites(x, y);
       for (var i in sx) {
-        spritesheet.sprite(quadro, sx[i])(ctx, x * sw, y * sh);
+        spritesheet.sprite(quadro, sx[i]).draw(ctx, x * sw, y * sh);
       }
     }
   }
@@ -101,7 +101,7 @@ function desenhaModelo(modelo, spritesheet, ctx, quadro, especial) {
 
       ctx.fillRect(cw - msgw / 2, ch - msgh / 2, msgw, msgh);
       ctx.strokeRect(cw - msgw / 2 + 0.5, ch - msgh / 2 + 0.5, msgw - 1, msgh - 1);
-      spritesheet.sprite(quadro, msgSprite)(ctx, cw - sw / 2, ch - msgh / 2 + OFFSET_VERTICAL_FIGURA);
+      spritesheet.sprite(quadro, msgSprite).draw(ctx, cw - sw / 2, ch - msgh / 2 + OFFSET_VERTICAL_FIGURA);
 
       ctx.fillStyle = "rgb(0,0,0)";
       for (var i in msga) {
