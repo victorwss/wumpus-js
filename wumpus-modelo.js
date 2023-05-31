@@ -1,201 +1,276 @@
 "use strict";
 
-var Modelo = (function() {
+const IDX_JOGADOR_COM_FLECHA = 0;
+const IDX_JOGADOR_SEM_FLECHA = 1;
+const IDX_WUMPUS_MORTO = 2;
+const IDX_WUMPUS_VIVO = 3;
+const IDX_BURACO = 4;
+const IDX_OURO = 5;
+const IDX_BRISA = 6;
+const IDX_FEDOR = 7;
+const IDX_INVISIVEL = 8;
+const IDX_VAZIO = 9;
 
-  var FUNCS = {
-    direcoes: Object.freeze({
-      SOBE: Object.freeze({}),
-      DESCE: Object.freeze({}),
-      DIREITA: Object.freeze({}),
-      ESQUERDA: Object.freeze({})
-    }),
-    elementos: Object.freeze({
-      BURACO: Object.freeze({}),
-      OURO: Object.freeze({}),
-      WUMPUS: Object.freeze({}),
-      JOGADOR: Object.freeze({}),
-      VAZIO: Object.freeze({})
-    }),
-    tiro: Object.freeze({
-      ACERTOU: Object.freeze({}),
-      ERROU: Object.freeze({}),
-      NAO_PODE_ATIRAR: Object.freeze({})
-    })
-  };
+const CAMADA_CHAO = 0;
+const CAMADA_BURACO = 1;
+const CAMADA_WUMPUS = 1;
+const CAMADA_OURO = 1;
+const CAMADA_JOGADOR = 2;
+const CAMADA_BRISA = 3;
+const CAMADA_FEDOR = 4;
+const CAMADA_MISTERIO = 5;
+const TOTAL_CAMADAS = 6;
 
-  FUNCS.Mapa = function(largura, altura, buracos) {
-    var mapa = {};
-    var mapaBasico = [];
-    var visivel = [];
-    for (var i = 0; i < largura * altura; i++) {
-      mapaBasico[i] = FUNCS.elementos.VAZIO;
-      visivel[i] = false;
+class Buraco extends Element {
+    constructor(cell) {
+        super(cell, () => IDX_BURACO, CAMADA_BURACO);
+    }
+}
+
+class Ouro extends Element {
+    constructor(cell) {
+        super(cell, () => IDX_OURO, CAMADA_OURO);
+    }
+}
+
+class Wumpus extends Element {
+    #vivo = true;
+
+    constructor(cell) {
+        super(cell, () => this.vivo ? IDX_WUMPUS_VIVO : IDX_WUMPUS_MORTO, CAMADA_WUMPUS);
     }
 
-    function valido(x, y) {
-      return x >= 0 && x < largura && y >= 0 && y < altura;
+    get vivo() {
+        return this.#vivo;
     }
 
-    function indice(x, y) {
-      return y * largura + x;
+    matar() {
+        this.#vivo = false;
+    }
+}
+
+class Jogador extends Element {
+    #temFlecha;
+
+    constructor(cell) {
+        super(cell, () => this.temFlecha ? IDX_JOGADOR_COM_FLECHA : IDX_JOGADOR_SEM_FLECHA, CAMADA_JOGADOR);
+        this.#temFlecha = true;
     }
 
-    function rx(indice) {
-      return indice % largura;
+    get temFlecha() {
+        return this.#temFlecha;
     }
 
-    function ry(indice) {
-      return Math.floor(indice / largura);
+    atirou() {
+        this.#temFlecha = false;
+    }
+}
+
+class Brisa extends Element {
+    constructor(cell) {
+        super(cell, () => IDX_BRISA, CAMADA_BRISA);
+    }
+}
+
+class Fedor extends Element {
+    constructor(cell) {
+        super(cell, () => IDX_FEDOR, CAMADA_FEDOR);
+    }
+}
+
+class Invisivel extends Element {
+    constructor(cell) {
+        super(cell, () => IDX_INVISIVEL, CAMADA_MISTERIO);
+    }
+}
+
+class Vazio extends Element {
+    constructor(cell) {
+        super(cell, () => IDX_VAZIO, CAMADA_CHAO);
+    }
+}
+
+class Direcao {
+    static SOBE = new Direcao();
+    static DESCE = new Direcao();
+    static DIREITA = new Direcao();
+    static ESQUERDA = new Direcao();
+    static values() {
+        return [Direcao.SOBE, Direcao.DESCE, Direcao.DIREITA, Direcao.ESQUERDA];
+    }
+}
+
+class Tiro {
+    static ACERTOU = new Tiro();
+    static ERROU = new Tiro();
+    static NAO_PODE_ATIRAR = new Tiro();
+    static values() {
+        return [Tiro.ACERTOU, Tiro.ERROU, Tiro.NAO_PODE_ATIRAR];
+    }
+}
+
+class Mapa {
+
+    #wumpus;
+    #jogador;
+    #ouro;
+    #fimJogo = undefined;
+    #board;
+    #buracos;
+    #mapaBasico;
+
+    constructor(rows, columns, buracos) {
+        if (!isNum(rows) || !isNum(columns) || !isNum(buracos)) throw new TypeError();
+        if (rows <= 0 || columns <= 0 || buracos <= 0)  throw new RangeError();
+        const board = new Board(rows, columns);
+        const mapa = {};
+        this.#mapaBasico = [];
+
+        for (let i = 0; i < board.rows; i++) {
+            const linha = [];
+            this.#mapaBasico.push(linha);
+            for (let j = 0; j < board.columns; j++) {
+                const cell = new Cell(board.at(i, j), TOTAL_CAMADAS);
+                cell.put(new Vazio(cell));
+                cell.put(new Invisivel(cell));
+                linha.push(cell);
+            }
+        }
+
+        this.#board = board;
+        this.#buracos = buracos;
+
+        for (let i = -3; i < buracos; i++) {
+            let c;
+            do {
+                c = this.cell(board.randomPosition());
+            } while (c.at(CAMADA_OURO) || c.at(CAMADA_WUMPUS) || c.at(CAMADA_JOGADOR) || c.at(CAMADA_BURACO));
+            switch (i) {
+                case -3:
+                    this.#jogador = new Jogador(c);
+                    c.put(this.#jogador);
+                    c.remove(CAMADA_MISTERIO);
+                    break;
+                case -2:
+                    this.#wumpus = new Wumpus(c);
+                    c.put(this.#wumpus);
+                    for (const q of c.position.neighbours4) {
+                        if (this.#valido(q)) this.cell(q).put(new Fedor(this.cell(q)));
+                    }
+                    break;
+                case -1:
+                    this.#ouro = new Ouro(c);
+                    c.put(this.#ouro);
+                    break;
+                default:
+                    c.put(new Buraco(c));
+                    for (const q of c.position.neighbours4) {
+                        if (this.#valido(q)) this.cell(q).put(new Brisa(this.cell(q)));
+                    }
+                    break;
+            }
+        }
+        Object.seal(this);
     }
 
-    var wumpusPos = -1;
-    var jogadorPos = -1;
-    var temFlecha = true;
-    var fimJogo = FUNCS.elementos.VAZIO;
-    var wumpusVivo = true;
-
-    mapa.visivel = function(x, y) {
-      return valido(x, y) && visivel[indice(x, y)];
-    };
-
-    function buracoIn(x, y) {
-      return valido(x, y) && mapaBasico[indice(x, y)] === FUNCS.elementos.BURACO;
+    cell(p) {
+        if (!(p instanceof BoardPosition)) throw new TypeError();
+        return this.#mapaBasico[p.row][p.column];
     }
 
-    mapa.buraco = function(x, y) {
-      return valido(x, y) && mapa.visivel(x, y) && buracoIn(x, y);
-    };
-
-    function wumpusIn(x, y) {
-      return valido(x, y) && mapaBasico[indice(x, y)] === FUNCS.elementos.WUMPUS;
+    #colocar(elem, p) {
+        if (!(elem instanceof Element)) throw new TypeError();
+        if (!(p instanceof BoardPosition)) throw new TypeError();
+        this.cell(p).push(elem);
     }
 
-    mapa.wumpus = function(x, y) {
-      return valido(x, y) && mapa.visivel(x, y) && wumpusIn(x, y);
-    };
-
-    mapa.ouro = function(x, y) {
-      return valido(x, y) && mapa.visivel(x, y) && mapaBasico[indice(x, y)] === FUNCS.elementos.OURO;
-    };
-
-    mapa.brisa = function(x, y) {
-      return valido(x, y) && mapa.visivel(x, y) && (buracoIn(x - 1, y) || buracoIn(x + 1, y) || buracoIn(x, y - 1) || buracoIn(x, y + 1));
-    };
-
-    mapa.fedor = function(x, y) {
-      return valido(x, y) && mapa.visivel(x, y) && (wumpusIn(x - 1, y) || wumpusIn(x + 1, y) || wumpusIn(x, y - 1) || wumpusIn(x, y + 1));
-    };
-
-    mapa.jogador = function(x, y) {
-      return indice(x, y) === jogadorPos;
-    };
-
-    mapa.fim = function() {
-      return fimJogo;
-    };
-
-    mapa.mover = function(direcao) {
-      if (fimJogo !== FUNCS.elementos.VAZIO) return;
-      var nx = rx(jogadorPos);
-      var ny = ry(jogadorPos);
-      if (direcao === FUNCS.direcoes.SOBE) {
-        ny--;
-      } else if (direcao === FUNCS.direcoes.DESCE) {
-        ny++;
-      } else if (direcao === FUNCS.direcoes.ESQUERDA) {
-        nx--;
-      } else if (direcao === FUNCS.direcoes.DIREITA) {
-        nx++;
-      } else {
-        return;
-      }
-      if (!valido(nx, ny)) return;
-      visivel[indice(nx, ny)] = true;
-      if (mapa.buraco(nx, ny)) {
-        fimJogo = FUNCS.elementos.BURACO;
-        jogadorPos = -1;
-      } else if (mapa.wumpus(nx, ny) && wumpusVivo) {
-        fimJogo = FUNCS.elementos.WUMPUS;
-        jogadorPos = -1;
-      } else {
-        jogadorPos = indice(nx, ny);
-      }
-      if (mapa.ouro(nx, ny)) fimJogo = FUNCS.elementos.OURO;
-      return fimJogo;
-    };
-
-    mapa.atirar = function(direcao) {
-      if (!temFlecha || fimJogo !== FUNCS.elementos.VAZIO) return FUNCS.tiro.NAO_PODE_ATIRAR;
-
-      var jx = rx(jogadorPos);
-      var jy = ry(jogadorPos);
-      var wx = rx(wumpusPos);
-      var wy = ry(wumpusPos);
-
-      var matou = false;
-      if (direcao === FUNCS.direcoes.SOBE) {
-        if (jx === wx && jy > wy) matou = true;
-      } else if (direcao === FUNCS.direcoes.DESCE) {
-        if (jx === wx && jy < wy) matou = true;
-      } else if (direcao === FUNCS.direcoes.ESQUERDA) {
-        if (jx > wx && jy === wy) matou = true;
-      } else if (direcao === FUNCS.direcoes.DIREITA) {
-        if (jx < wx && jy === wy) matou = true;
-      } else {
-        return FUNCS.tiro.NAO_PODE_ATIRAR;
-      }
-      if (matou) wumpusVivo = false;
-      temFlecha = false;
-      return matou ? FUNCS.tiro.ACERTOU : FUNCS.tiro.ERROU;
+    #revelar(p) {
+        if (!(p instanceof BoardPosition)) throw new TypeError();
+        if (!this.#valido(p)) throw new RangeError();
+        this.cell(p).remove(CAMADA_MISTERIO);
     }
 
-    mapa.altura = function() {
-      return altura;
-    };
-
-    mapa.largura = function() {
-      return largura;
-    };
-
-    mapa.temFlecha = function() {
-      return temFlecha;
-    };
-
-    mapa.wumpusVivo = function() {
-      return wumpusVivo;
-    };
-
-    for (var i = -3; i < buracos; i++) {
-      var z, t;
-      do {
-        t = Math.floor(Math.random() * largura * altura);
-        z = mapaBasico[t];
-      } while (z != FUNCS.elementos.VAZIO);
-      switch (i) {
-        case -3:
-          jogadorPos = t;
-          z = FUNCS.elementos.JOGADOR;
-          visivel[t] = true;
-          break;
-        case -2:
-          wumpusPos = t;
-          z = FUNCS.elementos.WUMPUS;
-          break;
-        case -1:
-          z = FUNCS.elementos.OURO;
-          break;
-        default:
-          z = FUNCS.elementos.BURACO;
-          break;
-      }
-      mapaBasico[t] = z;
-      z = FUNCS.elementos.VAZIO;
+    #valido(place) {
+        if (!(place instanceof BoardPosition)) throw new TypeError();
+        return place !== null && place.column >= 0 && place.column < this.#board.columns && place.row >= 0 && place.row < this.#board.rows;
     }
 
-    Object.freeze(mapa);
-    return mapa;
-  }
+    buraco(place) {
+        if (!(place instanceof BoardPosition)) throw new TypeError();
+        return this.#valido(place) && this.cell(place).at(CAMADA_BURACO) instanceof Buraco;
+    }
 
-  Object.freeze(FUNCS);
-  return FUNCS;
-})();
+    wumpus(place) {
+        if (!(place instanceof BoardPosition)) throw new TypeError();
+        return this.#valido(place) && this.cell(place).at(CAMADA_WUMPUS) instanceof Wumpus;
+    }
+
+    ouro(place) {
+        if (!(place instanceof BoardPosition)) throw new TypeError();
+        return this.#ouro.position.eq(place);
+    }
+
+    get fim() {
+        return this.#fimJogo;
+    }
+
+    get board() {
+        return this.#board;
+    }
+
+    get temFlecha() {
+        return this.#jogador && this.#jogador.temFlecha;
+    }
+
+    get wumpusVivo() {
+        return this.#wumpus.vivo;
+    }
+
+    mover(direcao) {
+        if (!(direcao instanceof Direcao)) throw new TypeError();
+
+        if (this.fim || !this.#jogador) return;
+
+        const op = this.#jogador.position;
+        const np = direcao === Direcao.SOBE ? op.up
+                : direcao === Direcao.DESCE ? op.down
+                : direcao === Direcao.ESQUERDA ? op.left
+                : direcao === Direcao.DIREITA ? op.right
+                : op;
+        if (op === np || !this.#valido(np)) return;
+        this.#revelar(np);
+        this.cell(op).remove(CAMADA_JOGADOR);
+        if (this.buraco(np)) {
+            this.#fimJogo = this.cell(np).at(CAMADA_BURACO);
+            this.#jogador = undefined;
+        } else if (this.wumpus(np) && this.#wumpus.vivo) {
+            this.#fimJogo = this.#wumpus;
+            this.#jogador = undefined;
+        } else {
+            this.#jogador.cell = this.cell(np);
+            this.cell(np).put(this.#jogador);
+            if (this.ouro(np)) this.#fimJogo = this.#ouro;
+        }
+        return this.#fimJogo;
+    }
+
+    atirar(direcao) {
+        if (!(direcao instanceof Direcao)) throw new TypeError();
+
+        if (!this.#jogador || !this.temFlecha || this.#fimJogo) return Tiro.NAO_PODE_ATIRAR;
+
+        const jx = this.#jogador.position.column;
+        const jy = this.#jogador.position.row;
+        const wx = this.#wumpus.position.column;
+        const wy = this.#wumpus.position.row;
+
+        let acertou = (direcao === Direcao.SOBE     && jx === wx && jy >   wy)
+                   || (direcao === Direcao.DESCE    && jx === wx && jy <   wy)
+                   || (direcao === Direcao.ESQUERDA && jx >   wx && jy === wy)
+                   || (direcao === Direcao.DIREITA  && jx <   wx && jy === wy);
+
+        this.#jogador.atirou();
+        if (acertou) this.#wumpus.matar();
+        return acertou ? Tiro.ACERTOU : Tiro.ERROU;
+    }
+}

@@ -1,74 +1,80 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Wumpus</title>
-    <script type="text/javascript" src="detect.js"></script>
-    <script type="text/javascript" src="sprites.js"></script>
-    <script type="text/javascript" src="teclado.js"></script>
-    <script type="text/javascript" src="wumpus-som.js"></script>
-    <script type="text/javascript" src="wumpus-desenho.js"></script>
-    <script type="text/javascript" src="wumpus-modelo.js"></script>
-    <script type="text/javascript" src="wumpus-controlador.js"></script>
-    <script type="text/javascript">
-      SpriteSheet(4, 10, "Wumpus5.png", function(sprites) {
-        var larg = Controller.intVar("Largura", 10, document.getElementById("larg"), document.getElementById("larg+"), document.getElementById("larg-"));
-        var alt = Controller.intVar("Altura", 10, document.getElementById("alt"), document.getElementById("alt+"), document.getElementById("alt-"));
-        var bur = Controller.intVar("Buracos", 10, document.getElementById("bur"), document.getElementById("bur+"), document.getElementById("bur-"));
-        var som = Controller.boolVar("Ligar som", "Desligar som", true, document.getElementById("som"));
-        var musica = Controller.boolVar("Ligar música", "Desligar música", true, document.getElementById("musica"));
-        var cfg = Controller.cfg(document, document.getElementById("subtitulo"), document.getElementById("restart"), document.getElementById("jogo"), larg, alt, bur, som, musica);
-        Controller.run(cfg, sprites);
-      });
-    </script>
-    <style type="text/css">
-      h2 {
-        overflow: hidden;
-        white-space: nowrap;
-      }
-      button {
-        font-weight: bold;
-        border: 1px double white;
-        outline: 1px solid #200090;
-        background: #200090;
-        margin: 2px;
-        color: white;
-        display: inline-block;
-      }
-      .info {
-        width: 314px;
-        display: inline-block;
-        text-align: center;
-      }
-      .menos, .mais {
-        width: 25px;
-      }
-      .ultima button {
-        width: 120px;
-      }
-    </style>
-  </head>
-  <body>
-    <h2 id="subtitulo"></h2>
-    <canvas id="jogo"></canvas>
-    <div class="linha">
-      <button id="larg-" class="menos larg">-</button>
-      <span id="larg" class="info"></span>
-      <button id="larg+" class="mais larg">+</button>
-    </div>
-    <div class="linha">
-      <button id="alt-" class="menos alt">-</button>
-      <span id="alt" class="info"></span>
-      <button id="alt+" class="mais alt">+</button>
-    </div>
-    <div class="linha">
-      <button id="bur-" class="menos bur">-</button>
-      <span id="bur" class="info"></span>
-      <button id="bur+" class="mais bur">+</button>
-    </div>
-    <div class="linha ultima">
-      <button id="restart">Recomeçar</button>
-      <button id="som">Som</button>
-      <button id="musica">Música</button>
-    </div>
-  </body>
+    <head>
+        <title>Wumpus</title>
+        <script type="text/javascript" src="2d.js"></script>
+        <script type="text/javascript" src="sprites.js"></script>
+        <script type="text/javascript" src="keyboard.js"></script>
+        <script type="text/javascript" src="main-loop.js"></script>
+        <script type="text/javascript" src="sound.js"></script>
+        <script type="text/javascript" src="wumpus-desenho.js"></script>
+        <script type="text/javascript" src="wumpus-modelo.js"></script>
+        <script type="text/javascript" src="wumpus-controlador.js"></script>
+        <script type="text/javascript">
+            async function loading() {
+                const $ = x => document.querySelector(x);
+                const finder = (name, ext) => `./musicas/${ext}/${name}.${ext}`;
+                const sprites = await SpriteSheet.create(4, 10, "Wumpus5.png");
+                const larg = new IntVar("Largura", 10, $("#larg"), $("#larg-up"), $("#larg-dn"));
+                const alt = new IntVar("Altura", 10, $("#alt"), $("#alt-up"), $("#alt-dn"));
+                const bur = new IntVar("Buracos", 10, $("#bur"), $("#bur-up"), $("#bur-dn"));
+                const som = new BoolVar("Ligar som", "Desligar som", true, $("#som"));
+                const musica = new BoolVar("Ligar música", "Desligar música", true, $("#musica"));
+                const repertorio = new Playlist(nomesSons, nomesMusicas, finder, finder);
+                const cfg = new Config(document, $("#subtitulo"), $("#restart"), larg, alt, bur, som, musica, repertorio);
+                new MapaController($("#jogo"), cfg, sprites, repertorio);
+            }
+            loading();
+        </script>
+        <style type="text/css">
+            h2 {
+                overflow: hidden;
+                white-space: nowrap;
+            }
+            button {
+                font-weight: bold;
+                border: 1px double white;
+                outline: 1px solid #2020FF;
+                background: #2020FF;
+                margin: 2px;
+                color: white;
+                display: inline-block;
+            }
+            .info {
+                width: 314px;
+                display: inline-block;
+                text-align: center;
+            }
+            .menos, .mais {
+                width: 25px;
+            }
+            .ultima button {
+                width: 120px;
+            }
+        </style>
+    </head>
+    <body>
+        <h2 id="subtitulo"></h2>
+        <canvas id="jogo"></canvas>
+        <div class="linha">
+            <button id="larg-dn" class="menos larg">-</button>
+            <span id="larg" class="info"></span>
+            <button id="larg-up" class="mais larg">+</button>
+        </div>
+        <div class="linha">
+            <button id="alt-dn" class="menos alt">-</button>
+            <span id="alt" class="info"></span>
+            <button id="alt-up" class="mais alt">+</button>
+        </div>
+        <div class="linha">
+            <button id="bur-dn" class="menos bur">-</button>
+            <span id="bur" class="info"></span>
+            <button id="bur-up" class="mais bur">+</button>
+        </div>
+        <div class="linha ultima">
+            <button id="restart">Recomeçar</button>
+            <button id="som">Som</button>
+            <button id="musica">Música</button>
+        </div>
+    </body>
 </html>
