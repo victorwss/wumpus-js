@@ -22,7 +22,7 @@ function desenharModelo(modelo, spritesheet, ctx, quadro, especial) {
 
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
-            const cell = modelo.cell(modelo.board.at(x, y));
+            const cell = modelo.cell(modelo.board.at(y, x));
             for (let z = 0; z < cell.layerCount; z++) {
                 cell.at(z)?.draw(q, spritesheet, ctx);
             }
